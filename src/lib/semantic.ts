@@ -22,6 +22,9 @@ export const presence = (raw: number) => enumValue(presences, raw)
 export const disposition = (raw: number) => enumValue(dispositions, raw)
 export const semanticRelation = (raw: number) => enumValue(relations, raw)
 export const driftVerdict = (raw: number) => enumValue(verdicts, raw)
+export function verdictTone(raw: number): 'good' | 'danger' | 'neutral' | 'warning' {
+  return raw === 1 ? 'good' : raw === 2 ? 'danger' : raw === 4 ? 'warning' : 'neutral'
+}
 
 export function changeFlags(value: number): string[] {
   if (!Number.isInteger(value) || value < 0 || value > 0xffffffff) throw new Error('Invalid u32 change_flags')
@@ -52,6 +55,24 @@ export type Observation = {
   condition_relation: number; scope_relation: number; exception_relation: number; quantitative_relation: number
   current_conditions: string; current_scope: string; current_exceptions: string
   current_quantitative_terms: string; evidence_excerpt: string; semantic_digest: string
+}
+
+export type SemanticSnapshot = {
+  presence: number; disposition: number; conditions: string; scope: string
+  exceptions: string; quantitative_terms: string; evidence_excerpt: string; semantic_digest: string
+}
+
+export function baselineSnapshot(baseline: Baseline): SemanticSnapshot {
+  return baseline
+}
+
+export function observationSnapshot(observation: Observation): SemanticSnapshot {
+  return {
+    presence: observation.current_presence, disposition: observation.current_disposition,
+    conditions: observation.current_conditions, scope: observation.current_scope,
+    exceptions: observation.current_exceptions, quantitative_terms: observation.current_quantitative_terms,
+    evidence_excerpt: observation.evidence_excerpt, semantic_digest: observation.semantic_digest,
+  }
 }
 
 export function isAdoptable(watchId: number, observationId: number, watch: Watch, observation: Observation): boolean {

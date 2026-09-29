@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { HashRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
 import DebugPage from './pages/DebugPage'
+import Dashboard from './pages/Dashboard'
+import CreateWatch from './pages/CreateWatch'
+import WatchDetail from './pages/WatchDetail'
+import { explainError } from './lib/errors'
 import { connectWallet, CONTRACT_ADDRESS, CONTRACT_EXPLORER, STUDIO_API, STUDIO_CHAIN_ID, walletProvider } from './lib/studio'
 import './App.css'
 
@@ -12,17 +16,23 @@ export default function App() {
   useEffect(() => {
     try {
       const provider = walletProvider()
+      const accountsChanged = (value: unknown) => {
+        const account = Array.isArray(value) && typeof value[0] === 'string' ? value[0] : ''
+        setWallet(account)
+        if (account) setWalletError('')
+      }
       provider.request({ method: 'eth_accounts' }).then(value => {
-        const account = (value as string[])[0]
-        if (account) setWallet(account)
+        accountsChanged(value)
       }).catch(() => { /* Connection remains user initiated. */ })
+      provider.on?.('accountsChanged', accountsChanged)
+      return () => provider.removeListener?.('accountsChanged', accountsChanged)
     } catch { /* Read access does not require a browser wallet. */ }
   }, [])
 
   async function connect() {
     setWalletBusy(true); setWalletError('')
     try { setWallet(await connectWallet()) }
-    catch (error) { setWalletError(error instanceof Error ? error.message : String(error)) }
+    catch (error) { setWalletError(explainError(error, 'Wallet connection failed')) }
     finally { setWalletBusy(false) }
   }
 
@@ -39,8 +49,10 @@ export default function App() {
       <main>
         <Routes>
           <Route path="/debug" element={<DebugPage wallet={wallet} onConnect={connect} />} />
-          <Route path="/" element={<Navigate to="/debug" replace />} />
-          <Route path="*" element={<Navigate to="/debug" replace />} />
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/create" element={<CreateWatch wallet={wallet} onConnect={connect} />} />
+          <Route path="/watch/:id" element={<WatchDetail wallet={wallet} onConnect={connect} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
       <footer>STUDIONET · CHAIN {STUDIO_CHAIN_ID} · <a href={CONTRACT_EXPLORER} target="_blank" rel="noreferrer">{CONTRACT_ADDRESS}</a> · <a href={STUDIO_API} target="_blank" rel="noreferrer">API</a></footer>

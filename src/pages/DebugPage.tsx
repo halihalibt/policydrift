@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { explainError } from '../lib/errors'
 import { CONTRACT_ADDRESS, CONTRACT_EXPLORER, estimateNetworkGas, getActiveBaseline, getObservation, getWatch, isFinalSuccess, protocolVersion, STUDIO_API, STUDIO_CHAIN_ID, watchCount, writeAndFinalize } from '../lib/studio'
 import type { TransactionProgress, WriteMethod } from '../lib/studio'
 
@@ -35,7 +36,7 @@ export default function DebugPage({ wallet, onConnect }: { wallet: string; onCon
         : readMethod === 'get_active_baseline' ? await getActiveBaseline(toId(watchId))
         : await getObservation(toId(observationId))
       setReadResult(result)
-    } catch (error) { setReadError(error instanceof Error ? error.message : String(error)) }
+    } catch (error) { setReadError(explainError(error, 'Read failed')) }
     finally { setReading(false) }
   }
 
@@ -47,7 +48,7 @@ export default function DebugPage({ wallet, onConnect }: { wallet: string; onCon
         : writeMethod === 'check_drift' ? [toId(watchId)] : [toId(watchId), toId(observationId)]
       const final = await writeAndFinalize(wallet, writeMethod, args, setProgress)
       if (!isFinalSuccess(final)) setWriteError(final.error || `Finalized without success: ${final.consensus} / ${final.execution}`)
-    } catch (error) { setWriteError(error instanceof Error ? error.message : String(error)) }
+    } catch (error) { setWriteError(explainError(error, 'Write failed')) }
     finally { setWriting(false) }
   }
 
@@ -56,7 +57,7 @@ export default function DebugPage({ wallet, onConnect }: { wallet: string; onCon
       if (!wallet) throw new Error('Connect the signing wallet first')
       const quote = await estimateNetworkGas(wallet)
       setGas(`${quote.gas} gas × ${quote.gasPriceWei} wei/gas = ${quote.maxWei} wei; generic Studio network diagnostic. The SDK estimates the encoded write again at send time.`)
-    } catch (error) { setGas(error instanceof Error ? error.message : String(error)) }
+    } catch (error) { setGas(explainError(error, 'Gas estimate failed')) }
   }
 
   return <>

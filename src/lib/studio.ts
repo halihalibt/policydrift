@@ -18,7 +18,11 @@ if (studionet.id !== STUDIO_CHAIN_ID || studionet.rpcUrls.default.http[0] !== ST
   throw new Error('Installed genlayer-js Studio configuration differs from the frozen network')
 }
 
-type Wallet = { request(args: { method: string; params?: unknown[] | Record<string, unknown> }): Promise<unknown> }
+type Wallet = {
+  request(args: { method: string; params?: unknown[] | Record<string, unknown> }): Promise<unknown>
+  on?(event: string, listener: (value: unknown) => void): void
+  removeListener?(event: string, listener: (value: unknown) => void): void
+}
 declare global { interface Window { ethereum?: Wallet } }
 
 export const reader = createClient({ chain: studionet })

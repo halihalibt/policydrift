@@ -24,8 +24,16 @@ The Studio RPC returns `result_name` and `consensus_data` in snake case despite 
 - Generic Studio SDK estimate returned `500000` gas and `eth_gasPrice = 0x0`; this is not a method-specific fee quote. The Studio API answered a browser-origin `OPTIONS` preflight for `http://localhost:5173` with `access-control-allow-origin: http://localhost:5173` and POST/content-type enabled.
 - `npm test`: 6/6 adapter tests; `npm run build` and `npm run lint`: passed. Vite reported ready at `http://127.0.0.1:5173/` inside the terminal sandbox.
 
-## Remaining acceptance gate
+## Browser wallet acceptance: passed
 
-The cloud browser returned `ERR_BLOCKED_BY_CLIENT` for `http://127.0.0.1:5173/#/debug`. Terminal sessions are isolated network namespaces, so a server started in one command cannot be reached by another command or that browser. A request to run outside the sandbox was automatically rejected by the execution approval policy. Browser wallet presence, wallet-signed write hash, browser transaction finalization, and the current frontend screenshot therefore remain **unverified**. The temporary `/debug` page is ready for a browser with MetaMask and access to a local or static deployment. Do not move the HANDOFF gate to the three formal pages until one real frontend-signed write finalizes successfully.
+The user ran this Project's `/debug` in a local browser with MetaMask and supplied the [success screenshot](studio_debug_browser_success.png) (SHA-256 `b3bf0cf8cd5609fa9f9955bcef2d611726fa39261b2874d83ae3ed3eed62ab34`). It shows the connected wallet `0x22acaa233b7b985b36ef168f2de9295334065b15`, Studio/Studionet 61999, the release contract address and `genlayer-js@1.1.8`.
+
+The browser signed `check_drift(1)`: [transaction `0xfc447cf054a8176b8bfb364f28b63ae7a6a12e6882f4e14c8e5bb56c99b811b8`](https://explorer-studio.genlayer.com/tx/0xfc447cf054a8176b8bfb364f28b63ae7a6a12e6882f4e14c8e5bb56c99b811b8), `FINALIZED / MAJORITY_AGREE / SUCCESS`, returned Observation ID `1`. The same screenshot shows finalized `get_watch(1)` with `check_count = 3`, `observation_count = 1`, `last_observation_id = 1`: the repeated semantic state reused Observation 1. This proof is user-provided browser evidence; it is distinct from the contract-stage transactions.
+
+**Studio Frontend Integration Freeze passed.** The earlier isolated-cloud-browser access limitation no longer blocks Project work because the required local browser flow was completed. The first wallet connection sometimes showed `Wallet: [object Object]`; the frontend now extracts provider error messages and codes through `src/lib/errors.ts`.
+
+## Execution environment note
+
+The agent's cloud browser still cannot open the local Vite server in this execution environment. Subsequent formal-page UI code is verified by build/tests and Studio read calls; its browser rendering and write controls require a reachable browser. Do not represent that limitation as a failed Studio contract flow.
 
 No Intelligent Contract interface defect or protocol change has been found. The existing redirect/source limitation remains exactly as described by the contract stage report.
