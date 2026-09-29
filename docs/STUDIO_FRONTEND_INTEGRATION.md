@@ -1,5 +1,7 @@
 # Studio frontend integration record
 
+> **Historical V1 record.** Addresses, transactions, screenshots and stage status below describe the original V1 integration. Current V1.1 preparation is recorded in [OFFICIAL_V1_1_BASELINE_PREPARATION.md](OFFICIAL_V1_1_BASELINE_PREPARATION.md); do not reuse these old proofs as V1.1 acceptance.
+
 Date: 2026-09-29. Contract source and release address remain frozen; no contract files were edited.
 
 ## Chosen SDK and calls

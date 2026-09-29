@@ -1,6 +1,6 @@
-# PolicyDrift Project architecture · Studio V1
+# PolicyDrift Project architecture · Studio V1.1
 
-The browser reads the deployed SemanticDriftRegistry through `genlayer-js@1.1.8` on `studionet` (chain 61999). The single contract address is `0x914BE63CCAE73DF6f039cdb84D46b951851aB8Ca`. The [canonical source](https://github.com/halihalibt/policydrift-semantic-drift-registry/blob/main/contracts/semantic_drift_registry.py) remains in its independent Intelligent Contract repository.
+The browser reads the deployed SemanticDriftRegistry through `genlayer-js@1.1.8` on `studionet` (chain 61999). The single contract address is `0x4bBF1Eaa4947686F2291605Caf1DC4e19F55C3C2`. The [canonical source](https://github.com/halihalibt/policydrift-semantic-drift-registry/blob/main/contracts/semantic_drift_registry.py) remains in its independent Intelligent Contract repository.
 
 | Layer | Role |
 | --- | --- |

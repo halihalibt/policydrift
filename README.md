@@ -20,15 +20,20 @@ Connect an external wallet, establish a Baseline with **Create Watch**, open its
 
 ## How do I try the demo?
 
-The public three-Watch V1→V2 demo is being prepared. The current [V1 source](public/demo/policy.html) must be published at a stable direct-200 URL **before** registering the three Demo Watches; it has not yet been published or registered. Meanwhile the release contract already has [live Watches](https://explorer-studio.genlayer.com/address/0x914BE63CCAE73DF6f039cdb84D46b951851aB8Ca). After opening the app locally, Dashboard and Watch Detail read those real records. The [Studio frontend proof](docs/STUDIO_FRONTEND_INTEGRATION.md) includes a wallet-signed finalized check and screenshot.
+The official V1.1 three-Watch demo is at **Stage 1: baseline preparation**. The [official policy source](public/demo/policy.html) has been restored to frozen V1: commercial use requires attribution, redistribution is prohibited, and no AI training clause is present. Official V1.1 Demo Watches have not been created. The next stage must verify the published V1 before establishing all three Baselines and then publishing V2.
+
+**Presence Transition Validation: PASS.** Independent validation Watches 1 and 2 on V1.1 finalized RULE_APPEARED and RULE_DISAPPEARED. These are frozen validation records, not official Demo Watches. Leave [validation-policy.html](public/demo/validation-policy.html) unchanged. See [V1.1 preparation record](docs/OFFICIAL_V1_1_BASELINE_PREPARATION.md).
+
+**Historical V1:** the old contract `0x914BE63CCAE73DF6f039cdb84D46b951851aB8Ca`, its old Demo #3/#4 successes and #5 failures, and the [browser wallet proof](docs/STUDIO_FRONTEND_INTEGRATION.md) remain historical evidence. They do not prove the new V1.1 official demo.
 
 ## Studio configuration
 
-| Item | V1 value |
+| Item | Current V1.1 value |
 | --- | --- |
 | Network | GenLayer Studio / Studionet, chain ID `61999` |
 | API | `https://studio.genlayer.com/api` |
-| Contract | [`0x914BE63CCAE73DF6f039cdb84D46b951851aB8Ca`](https://explorer-studio.genlayer.com/address/0x914BE63CCAE73DF6f039cdb84D46b951851aB8Ca) |
+| Contract | [`0x4bBF1Eaa4947686F2291605Caf1DC4e19F55C3C2`](https://explorer-studio.genlayer.com/address/0x4bBF1Eaa4947686F2291605Caf1DC4e19F55C3C2) |
+| Protocol | `PolicyDrift-V1.1-Studio` |
 | SDK | `genlayer-js@1.1.8` (pinned exactly) |
 
 The single network integration is `src/lib/studio.ts`; semantic enum/bitmask conversion is `src/lib/semantic.ts`. No private key, server wallet, OpenAI API key, backend, database or paid service is used.
@@ -50,6 +55,6 @@ npm run lint
 npm run build
 ```
 
-The build uses relative asset paths for a GitHub Pages project repository. The output includes `dist/demo/policy.html`. Publishing to Pages, the three Demo Watches and V2 switch are still pending.
+The build uses relative asset paths for a GitHub Pages project repository. The output includes `dist/demo/policy.html`. The Pages workflow can publish this prepared V1 build. Official V1.1 Baseline registration and the later V2 switch require the next stage.
 
 See [architecture](docs/ARCHITECTURE.md), [demo sequence](docs/DEMO.md), [frontend proof](docs/STUDIO_FRONTEND_INTEGRATION.md) and the [contract deployment report](https://github.com/halihalibt/policydrift-semantic-drift-registry/blob/main/docs/STUDIO_STAGE_RESULT.md). The Project and Intelligent Contract retain independent Git histories.

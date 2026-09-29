@@ -10,7 +10,7 @@ export type { TransactionProgress } from './transactions'
 
 export const STUDIO_API = 'https://studio.genlayer.com/api'
 export const STUDIO_CHAIN_ID = 61999
-export const CONTRACT_ADDRESS = '0x914BE63CCAE73DF6f039cdb84D46b951851aB8Ca' as const
+export const CONTRACT_ADDRESS = '0x4bBF1Eaa4947686F2291605Caf1DC4e19F55C3C2' as const
 export const CONTRACT_EXPLORER = `https://explorer-studio.genlayer.com/address/${CONTRACT_ADDRESS}`
 const chainHex = `0x${STUDIO_CHAIN_ID.toString(16)}`
 

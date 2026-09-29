@@ -1,5 +1,7 @@
 # PolicyDrift Project stage · Studio frontend and formal pages
 
+> **Historical V1 record.** Addresses, transactions, screenshots and stage status below describe the original V1 integration. Current V1.1 preparation is recorded in [OFFICIAL_V1_1_BASELINE_PREPARATION.md](OFFICIAL_V1_1_BASELINE_PREPARATION.md); do not reuse these old proofs as V1.1 acceptance.
+
 Status: Studio Frontend Integration Freeze **passed** on 2026-09-29 based on the user's actual browser transaction and [screenshot](studio_debug_browser_success.png). Dashboard, Create Watch and Watch Detail basic functionality is implemented. Public Demo step 40 (policy V1 source) is prepared; step 41 (public source deployment) remains open, so there are no Demo Watch/V2 claims.
 
 ## Frozen Project configuration
