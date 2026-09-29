@@ -1,6 +1,6 @@
 # PolicyDrift Project architecture · Studio V1
 
-The browser reads the deployed SemanticDriftRegistry through `genlayer-js@1.1.8` on `studionet` (chain 61999). The single contract address is `0x914BE63CCAE73DF6f039cdb84D46b951851aB8Ca`. The [canonical source](../../policydrift-semantic-drift-registry/README.md) remains in its independent Intelligent Contract repository.
+The browser reads the deployed SemanticDriftRegistry through `genlayer-js@1.1.8` on `studionet` (chain 61999). The single contract address is `0x914BE63CCAE73DF6f039cdb84D46b951851aB8Ca`. The [canonical source](https://github.com/halihalibt/policydrift-semantic-drift-registry/blob/main/contracts/semantic_drift_registry.py) remains in its independent Intelligent Contract repository.
 
 | Layer | Role |
 | --- | --- |
@@ -20,4 +20,4 @@ Only a matching connected Owner sees the Adopt button. It also requires the late
 
 The SDK obtains a transaction hash from the browser's EIP-1193 provider. The UI tracks the hash until FINALIZED and then evaluates consensus and GenVM execution separately. `MAJORITY_DISAGREE` is Undetermined even if a leader executed successfully. Studio's generic gas estimate is only a diagnostic; the SDK estimates the encoded write when sending.
 
-Hash routing and Vite's relative asset base support the intended GitHub Pages project path. The public demo policy is a static direct URL, with no runtime backend. The Studio Web Access redirect/final-URL limitation remains documented in the [contract stage](../../policydrift-semantic-drift-registry/docs/STUDIO_STAGE_RESULT.md); frontend code does not change the frozen source-boundary semantics.
+Hash routing and Vite's relative asset base support the intended GitHub Pages project path. The public demo policy is a static direct URL, with no runtime backend. The Studio Web Access redirect/final-URL limitation remains documented in the [contract stage](https://github.com/halihalibt/policydrift-semantic-drift-registry/blob/main/docs/STUDIO_STAGE_RESULT.md); frontend code does not change the frozen source-boundary semantics.

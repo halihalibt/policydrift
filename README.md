@@ -4,7 +4,7 @@ Monitor when public rules actually change, rather than when webpage text merely 
 
 ## What is it?
 
-PolicyDrift tracks one normative question against one public policy URL. A Watch stores a semantic Baseline; later checks append Observations with a verdict, material-change flags, evidence and history. The protocol is implemented in the separately maintained [SemanticDriftRegistry repository](../policydrift-semantic-drift-registry/README.md). This Project is its browser interface and contains no second canonical contract source.
+PolicyDrift tracks one normative question against one public policy URL. A Watch stores a semantic Baseline; later checks append Observations with a verdict, material-change flags, evidence and history. The protocol is implemented in the separately maintained [SemanticDriftRegistry repository](https://github.com/halihalibt/policydrift-semantic-drift-registry). This Project is its browser interface and contains no second canonical contract source.
 
 ## Why are text diffs insufficient?
 
@@ -52,4 +52,4 @@ npm run build
 
 The build uses relative asset paths for a GitHub Pages project repository. The output includes `dist/demo/policy.html`. Publishing to Pages, the three Demo Watches and V2 switch are still pending.
 
-See [architecture](docs/ARCHITECTURE.md), [demo sequence](docs/DEMO.md), [frontend proof](docs/STUDIO_FRONTEND_INTEGRATION.md) and the [contract deployment report](../policydrift-semantic-drift-registry/docs/STUDIO_STAGE_RESULT.md). The Project is a separate local Git repository; remote GitHub publication remains open.
+See [architecture](docs/ARCHITECTURE.md), [demo sequence](docs/DEMO.md), [frontend proof](docs/STUDIO_FRONTEND_INTEGRATION.md) and the [contract deployment report](https://github.com/halihalibt/policydrift-semantic-drift-registry/blob/main/docs/STUDIO_STAGE_RESULT.md). The Project and Intelligent Contract retain independent Git histories.

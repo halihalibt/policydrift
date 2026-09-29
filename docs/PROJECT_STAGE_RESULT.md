@@ -10,7 +10,7 @@ Status: Studio Frontend Integration Freeze **passed** on 2026-09-29 based on the
 | Network | GenLayer Studio / Studionet, chain ID `61999` |
 | API | `https://studio.genlayer.com/api` |
 | Contract | [`0x914BE63CCAE73DF6f039cdb84D46b951851aB8Ca`](https://explorer-studio.genlayer.com/address/0x914BE63CCAE73DF6f039cdb84D46b951851aB8Ca) |
-| Contract source | Independent frozen `policydrift-semantic-drift-registry` repository; no source copy or modification in this Project |
+| Contract source | Independent frozen [Intelligent Contract repository](https://github.com/halihalibt/policydrift-semantic-drift-registry); no source copy or modification in this Project |
 | Frontend | React, TypeScript, Vite, HashRouter; no backend, database, server wallet or private key |
 
 ## Browser evidence
@@ -42,6 +42,6 @@ The first wallet connection's short `Wallet: [object Object]` notice is addresse
 
 The restored Project runs `npm test`, `npm run lint` and `npm run build` successfully. The SDK has returned actual Studio Baseline and history-ID views used by Watch Detail. The formal pages' rendering and their individual write buttons have not been exercised in the user's browser yet; Create Watch and owner Adopt remain live acceptance items during the upcoming Demo transactions.
 
-The V1 demo source is `public/demo/policy.html`, and the build copies it to `dist/demo/policy.html`. `.github/workflows/pages.yml` prepares GitHub Pages. The connected GitHub account has no `policydrift` repository yet, and the available GitHub connector has no repository-create operation. The public V1 URL, three registration hashes/Baselines, V2 switch, three verdicts and final Pages deployment proof remain open. Do not change `policy.html` to V2 before all three V1 Baselines exist.
+The V1 demo source is `public/demo/policy.html`, and the build copies it to `dist/demo/policy.html`. `.github/workflows/pages.yml` prepares GitHub Pages in the independently created [Project repository](https://github.com/halihalibt/policydrift). The public V1 URL, three registration hashes/Baselines, V2 switch, three verdicts and final Pages deployment proof remain open. Do not change `policy.html` to V2 before all three V1 Baselines exist.
 
 No deviation from the frozen protocol is introduced. The Studio redirect/final-URL limitation remains in the Intelligent Contract stage report; the frontend does not reinterpret it.
