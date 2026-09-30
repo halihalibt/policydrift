@@ -13,9 +13,23 @@ A policy can rephrase a rule without changing it, or replace one short condition
 
 All authoritative Watch, Baseline and Observation records come from the deployed Intelligent Contract. The frontend has no application database that substitutes a private answer.
 
+## GenLayer Intelligent Contract
+
+This Projects repository includes the complete, byte-identical V1.1 contract source at [`contracts/semantic_drift_registry.py`](contracts/semantic_drift_registry.py) and its unchanged [18 protocol tests](contract-tests/test_protocol.py). The separate [Intelligent Contracts repository](https://github.com/halihalibt/policydrift-semantic-drift-registry) remains the canonical source; the copy here makes the submitted Project independently reviewable. The contract source SHA-256 is `3a7ef302bf57b4c9ee7e8993dd7aac2496c4272faa168f61368af219d657e3d4`.
+
+Deployed V1.1: [`0x4bBF1Eaa4947686F2291605Caf1DC4e19F55C3C2`](https://explorer-studio.genlayer.com/address/0x4bBF1Eaa4947686F2291605Caf1DC4e19F55C3C2) on GenLayer Studio / Studionet **61999**, protocol `PolicyDrift-V1.1-Studio`.
+
+```text
+Frontend SDK → SemanticDriftRegistry → GenLayer validator consensus
+             → structured Semantic State → deterministic drift classifier
+             → append-only Baseline and Observation history
+```
+
+See [`CONTRACT.md`](CONTRACT.md) for the exact client read and write methods, nondeterministic validator flow, deterministic state transitions and frontend file paths. The contract test suite runs with `python -m unittest discover -s contract-tests -v` and uses a minimal simulated GenLayer host; the linked Studio Explorer transactions separately demonstrate real validator execution.
+
 ## Why GenLayer is the product core
 
-The leader and validators independently retrieve the registered public source and assess its structured Semantic State. Consensus verifies critical fields and evidence anchoring; deterministic contract logic computes material drift and stores shared, inspectable history. This is not a single LLM API response behind a dashboard. The reusable protocol lives in the separate [canonical SemanticDriftRegistry repository](https://github.com/halihalibt/policydrift-semantic-drift-registry); this Project delivers the browser workflow, SDK integration, result interpretation and public demonstration. No second copy of the canonical Python contract is kept here.
+The leader and validators independently retrieve the registered public source and assess its structured Semantic State. Consensus verifies critical fields and evidence anchoring; deterministic contract logic computes material drift and stores shared, inspectable history. This is not a single LLM API response behind a dashboard. The reusable protocol is maintained in the separate [canonical SemanticDriftRegistry repository](https://github.com/halihalibt/policydrift-semantic-drift-registry); this Project delivers the browser workflow, SDK integration, result interpretation and public demonstration. The included contract copy supports direct review of that integration.
 
 ## Official V1.1 three-Watch Demo — finalized
 
