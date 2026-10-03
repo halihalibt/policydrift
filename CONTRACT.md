@@ -22,7 +22,7 @@ The copied module's opening docstring retains its historical “V1” wording. T
 
 ## 3. Client queries and read methods
 
-[`src/lib/studio.ts`](src/lib/studio.ts) defines the single `CONTRACT_ADDRESS`, `STUDIO_CHAIN_ID`, and `STUDIO_API`, checks the installed `studionet` definition, and creates the `genlayer-js@1.1.8` client. Its `read()` uses `reader.readContract` at that address with `TransactionHashVariant.LATEST_FINAL` and `jsonSafeReturn: true`. The actual `@gl.public.view` methods in the copied contract are:
+[`src/lib/studio.ts`](src/lib/studio.ts) defines the single `CONTRACT_ADDRESS`, `STUDIO_CHAIN_ID`, and `STUDIO_API`, checks the installed `studionet` definition, and creates the `genlayer-js@1.1.8` client. Its shared reader in [`src/lib/rpc.ts`](src/lib/rpc.ts) uses `reader.readContract` at that address with `TransactionHashVariant.LATEST_FINAL` and `jsonSafeReturn: true`. The actual `@gl.public.view` methods in the copied contract are:
 
 | Contract method | Client wrapper | Use in product |
 | --- | --- | --- |
@@ -39,7 +39,9 @@ The contract has no separate comparison query. [`src/pages/WatchDetail.tsx`](src
 
 Existing Watch detail and Dashboard records are read from the deployed contract, not hard-coded finalized demo data or a private verdict database. The checked-in [`public/demo/policy.html`](public/demo/policy.html) is the public V2 **source document being monitored**, not a mock result store. [`public/demo/validation-policy.html`](public/demo/validation-policy.html) is a separate frozen validation source.
 
-The UI calls `writeAndFinalize()` in `src/lib/studio.ts` for `register_watch`, `check_drift` and eligible owner-only `adopt_observation`. That wrapper signs with an injected wallet, then polls the transaction and waits for `FINALIZED`. Its frontend receipt display may briefly lag the authoritative Registry/Explorer result; the official finalized proof Watches are read-only for this review.
+The UI calls `writeAndFinalize()` in `src/lib/studio.ts` for `register_watch`, `check_drift` and eligible owner-only `adopt_observation`. That wrapper submits once through the injected wallet, then polls status and waits for `FINALIZED`. Only read operations can automatically retry; no signature or transaction submission is retried, including a second SDK ABI-fallback submission. Uncertain submission/status retrieval produces manual Explorer-inspection guidance, with the hash when available. Receipt consensus/execution classification is unchanged; this update does not claim to reconcile every historical receipt display discrepancy. The official finalized proof Watches are read-only for this review.
+
+[`src/lib/rpc.ts`](src/lib/rpc.ts) allowlists these eight view methods, limits contract reads to two concurrent operations, and retries only transient reads at most four times. [`src/lib/dashboard.ts`](src/lib/dashboard.ts) stages Watch reads and retains last-known-good data through a failed refresh. [`src/lib/errors.ts`](src/lib/errors.ts) separates transport, contract, network, rejection and capability errors and keeps raw technical diagnostics. [`src/lib/wallet.ts`](src/lib/wallet.ts) selects the official SDK Snap path for supported MetaMask providers, or verified generic EIP-1193 network/account routing. `accountsChanged` and `chainChanged` update connection state; public reads remain independent of wallet availability.
 
 ## 4. Nondeterministic execution and consensus
 
@@ -79,7 +81,7 @@ For a definite `NOT_STATED → PRESENT` or `PRESENT → NOT_STATED` transition w
 - Baseline and Observation histories are append-only; an eligible owner adoption appends a new Baseline and changes the active pointer rather than rewriting prior records. No official Demo adoption occurred.
 - Independent validator retrieval, strict parsing, exact critical-vector comparison and positive evidence anchoring constrain nondeterministic extraction; deterministic contract code computes drift classification.
 - A public, stable, single-URL policy and focused question are protocol assumptions. `NOT_STATED` is weaker negative evidence than an anchored positive quote. Dynamic/personalized source content and source equivocation are residual limitations.
-- The frontend requests latest-final contract reads and presents stored states. A transient frontend transaction-status retrieval anomaly is distinct from the finalized Registry and Explorer outcomes; no root cause is asserted here.
-- The copied source and tests are for repository reviewability. They do not change the already deployed address, contract semantics, SDK behavior, public policy, validation source or on-chain state.
+- The frontend requests latest-final contract reads and presents stored states. Transient read failures are retried safely; exhausted retries produce actionable errors while Debug preserves the underlying details. A frontend transaction-status retrieval anomaly is distinct from finalized Registry and Explorer outcomes; no Studio-node root cause is asserted. Submissions are never automatically repeated.
+- The copied source and tests are for repository reviewability. They do not change the already deployed address, contract semantics, public policy, validation source or on-chain state. The frontend reliability changes retain `genlayer-js@1.1.8` and the same network configuration; they change read scheduling/error handling and wallet connection routing only.
 
 Run the copied protocol tests from the Projects root with `python -m unittest discover -s contract-tests -v`. The tests simulate the GenLayer host boundary and do not themselves prove live consensus; the three linked finalized Studio transactions provide live execution evidence. Run the product checks with `npm test`, `npm run lint` and `npm run build`.

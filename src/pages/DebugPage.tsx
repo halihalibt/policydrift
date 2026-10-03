@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { explainError } from '../lib/errors'
+import { readDiagnostics, technicalError, explainError } from '../lib/errors'
 import { CONTRACT_ADDRESS, CONTRACT_EXPLORER, estimateNetworkGas, getActiveBaseline, getObservation, getWatch, isFinalSuccess, protocolVersion, STUDIO_API, STUDIO_CHAIN_ID, watchCount, writeAndFinalize } from '../lib/studio'
 import type { TransactionProgress, WriteMethod } from '../lib/studio'
 
@@ -36,7 +36,7 @@ export default function DebugPage({ wallet, onConnect }: { wallet: string; onCon
         : readMethod === 'get_active_baseline' ? await getActiveBaseline(toId(watchId))
         : await getObservation(toId(observationId))
       setReadResult(result)
-    } catch (error) { setReadError(explainError(error, 'Read failed')) }
+    } catch (error) { setReadError(technicalError(error)) }
     finally { setReading(false) }
   }
 
@@ -48,7 +48,7 @@ export default function DebugPage({ wallet, onConnect }: { wallet: string; onCon
         : writeMethod === 'check_drift' ? [toId(watchId)] : [toId(watchId), toId(observationId)]
       const final = await writeAndFinalize(wallet, writeMethod, args, setProgress)
       if (!isFinalSuccess(final)) setWriteError(final.error || `Finalized without success: ${final.consensus} / ${final.execution}`)
-    } catch (error) { setWriteError(explainError(error, 'Write failed')) }
+    } catch (error) { setWriteError(technicalError(error)) }
     finally { setWriting(false) }
   }
 
@@ -73,6 +73,7 @@ export default function DebugPage({ wallet, onConnect }: { wallet: string; onCon
         <dt>SDK</dt><dd className="mono">genlayer-js@1.1.8</dd>
       </dl>
     </section>
+    <details><summary>Recent technical diagnostics</summary><pre>{JSON.stringify(readDiagnostics(), null, 2)}</pre></details>
     <div className="grid">
       <section className="panel">
         <h2>READ / finalized chain state</h2>

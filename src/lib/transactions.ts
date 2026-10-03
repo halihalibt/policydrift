@@ -1,3 +1,6 @@
+import { retryTransientRead, pause } from './rpc.ts'
+import type { RetryOptions } from './rpc.ts'
+import { classifyError, TransactionReviewError } from './errors.ts'
 export type TransactionProgress = {
   hash: string; status: string; consensus: string; execution: string
   returnedId?: number; error?: string
@@ -28,4 +31,31 @@ export function classifyTransaction(tx: StudioTransaction, hash: string): Transa
 
 export function isFinalSuccess(tx: TransactionProgress): boolean {
   return tx.status === 'FINALIZED' && tx.consensus === 'MAJORITY_AGREE' && tx.execution === 'SUCCESS'
+}
+
+/** The send function is deliberately outside every retry/poll loop. */
+export async function submitOnceAndTrack(
+  send: () => Promise<string>, statusRead: (hash: string) => Promise<TransactionProgress>,
+  progress: (state: TransactionProgress) => void,
+  options: RetryOptions & { maxPolls?: number; interval?: number } = {},
+): Promise<TransactionProgress> {
+  let hash: string
+  try { hash = await send() }
+  catch (cause) {
+    if (classifyError(cause) === 'WALLET_REJECTED') throw cause
+    throw new TransactionReviewError('Transaction submission could not be confirmed. Inspect the wallet and Studio Explorer before any manual retry.', { cause })
+  }
+  if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) throw new TransactionReviewError('Wallet returned an invalid transaction hash after submission. Inspect the wallet and Studio Explorer before any manual retry.')
+  progress({ hash, status: 'SUBMITTED', consensus: 'PENDING', execution: 'PENDING' })
+  for (let attempt = 0; attempt < (options.maxPolls ?? 180); attempt++) {
+    await (options.sleep ?? pause)(options.interval ?? 3000)
+    let state: TransactionProgress
+    try { state = await retryTransientRead(() => statusRead(hash), 'submitted transaction status', options) }
+    catch (cause) {
+      throw new TransactionReviewError(`Transaction ${hash} was submitted, but its status could not be retrieved. Inspect Studio Explorer before any manual retry.`, { cause })
+    }
+    progress(state)
+    if (state.status === 'FINALIZED' || state.status === 'CANCELED') return state
+  }
+  throw new TransactionReviewError(`Finalization timed out for ${hash}; inspect it in Studio Explorer before any manual retry.`)
 }

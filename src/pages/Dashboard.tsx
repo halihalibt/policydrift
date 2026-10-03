@@ -1,46 +1,50 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { explainError } from '../lib/errors'
 import { sourceDomain, timeLabel } from '../lib/format'
 import { driftVerdict, verdictTone } from '../lib/semantic'
-import type { Observation, Watch } from '../lib/semantic'
-import { getObservation, getObservationIds, getWatch, protocolVersion, watchCount } from '../lib/studio'
+import { createDashboardRecovery, enrichDashboard, retainedLoad } from '../lib/dashboard'
+import type { DashboardData, LoadState, LoadAction } from '../lib/dashboard'
+import { getObservation, getObservationIds, getWatch, protocolVersion, watchCount, viewScheduler, CONTRACT_ADDRESS, STUDIO_CHAIN_ID } from '../lib/studio'
 
-type Row = { id: number; watch: Watch; latest?: Observation; semanticChanges: number }
-type DashboardData = { version: string; count: number; rows: Row[] }
+import { recordDiagnostic } from '../lib/errors'
+import { createDashboardCache, CACHE_REVALIDATION_GAP_MS } from '../lib/dashboard-cache'
+const cache = createDashboardCache(`policydrift-dashboard-v3-${STUDIO_CHAIN_ID}-${CONTRACT_ADDRESS}`)
+const reads = { protocolVersion, watchCount, getWatch, getObservationIds, getObservation, waitMs: viewScheduler.remaining }
 
 export default function Dashboard() {
-  const [data, setData] = useState<DashboardData>()
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-
-  const reload = useCallback(async () => {
-    setLoading(true); setError('')
-    try {
-      const [version, count] = await Promise.all([protocolVersion(), watchCount()])
-      const rows = await Promise.all(Array.from({ length: count }, async (_, index): Promise<Row> => {
-        const id = index + 1
-        const [watch, observationIds] = await Promise.all([getWatch(id), getObservationIds(id)])
-        const observations = await Promise.all(observationIds.map(getObservation))
-        const latestIndex = observationIds.indexOf(watch.last_observation_id)
-        return {
-          id, watch,
-          latest: observations[latestIndex]
-            ?? (watch.last_observation_id ? await getObservation(watch.last_observation_id) : undefined),
-          semanticChanges: observations.filter(observation => observation.verdict === 2).length,
-        }
-      }))
-      rows.sort((a, b) => b.watch.created_at - a.watch.created_at || b.id - a.id)
-      setData({ version, count, rows })
-    } catch (cause) { setError(explainError(cause, 'Could not read Studio contract')) }
-    finally { setLoading(false) }
-  }, [])
+  const [{ data, loading, error, reconnecting, rateLimited }, dispatch] = useReducer(
+    (state: LoadState<DashboardData>, action: LoadAction<DashboardData>) => retainedLoad(state, action),
+    { loading: true, error: '' },
+    state => ({ ...state, data: cache.read() }),
+  )
+  const [enriching, setEnriching] = useState(false)
+  const initialTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const enrichment = useRef<AbortController | undefined>(undefined)
+  const recovery = useMemo(() => createDashboardRecovery(
+    reads, action => {
+      if (action.type === 'success') { cache.save(action.data) }
+      dispatch(action)
+    },
+  ), [])
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void reload() }, 0)
-    return () => window.clearTimeout(timer)
-  }, [reload])
+    // Very recent snapshots do not cause another full burst on hard refresh.
+    const saved = cache.read()
+    const wait = saved?.syncedAt === undefined ? 0 : Math.max(0, saved.syncedAt + CACHE_REVALIDATION_GAP_MS - Date.now())
+    initialTimer.current = setTimeout(() => { initialTimer.current = undefined; recovery.start() }, wait)
+    return () => { clearTimeout(initialTimer.current); recovery.cancel(); enrichment.current?.abort() }
+  }, [recovery])
 
+  function refresh() { clearTimeout(initialTimer.current); initialTimer.current = undefined; enrichment.current?.abort(); setEnriching(false); recovery.start() }
+  async function loadMetrics() {
+    if (!data || loading || enriching) return
+    const controller = new AbortController(); enrichment.current = controller; setEnriching(true)
+    try {
+      const enriched = await enrichDashboard(data, reads, controller.signal)
+      if (!controller.signal.aborted) { cache.save(enriched); dispatch({ type: 'success', data: enriched }) }
+    } catch (error) { if (!controller.signal.aborted) recordDiagnostic('Dashboard optional metrics', error) }
+    finally { if (enrichment.current === controller) setEnriching(false) }
+  }
   return <>
     <div className="page-head">
       <div><span className="eyebrow">Semantic policy monitoring / Studio</span>
@@ -49,23 +53,27 @@ export default function Dashboard() {
       </div>
       <Link className="button-link primary" to="/create">+ Create Watch</Link>
     </div>
-    {error && <p className="notice error" role="alert">{error}</p>}
-    <div className="section-head"><span className="eyebrow">Live registry</span><button className="secondary" onClick={reload} disabled={loading}>↻ Refresh</button></div>
-    {loading && <p className="muted">Reading finalized Studio state…</p>}
+    {error && <p className={`notice ${data ? 'warning' : 'error'}`} role="alert">{error}{data && ' Showing the last successfully read data.'}</p>}
+    <div className="section-head"><span className="eyebrow">Live registry</span><button className="secondary" onClick={refresh} disabled={loading && !reconnecting && !data?.cached}>↻ Refresh</button></div>
+    {data?.syncedAt !== undefined && <p className="muted" role="note">{data.cached ? 'Cached snapshot. ' : ''}Last synced {new Date(data.syncedAt).toLocaleTimeString()}. {data.cached && 'Revalidating automatically; this is not a fresh chain read.'}</p>}
+    {loading && <p className="muted" role="status">{reconnecting
+      ? `${rateLimited ? 'Studio is rate-limiting reads. Retrying automatically…' : 'Studio is temporarily unavailable. Reconnecting automatically…'}${data ? ' Showing the last successfully read data.' : ''}`
+      : data ? 'Reading finalized Studio state…' : 'Connecting to Studio…'}</p>}
     {data && <>
       <div className="metric-grid">
         <div className="metric"><span>Watches</span><strong>{data.count}</strong></div>
-        <div className="metric"><span>Checks</span><strong>{data.rows.reduce((sum, row) => sum + row.watch.check_count, 0)}</strong></div>
-        <div className="metric"><span>Semantic Changes</span><strong>{data.rows.reduce((sum, row) => sum + row.semanticChanges, 0)}</strong></div>
-        <div className="metric"><span>Active Baselines</span><strong>{data.rows.filter(row => row.watch.active_baseline_id > 0).length}</strong></div>
+        <div className="metric"><span>{data.count > data.rows.length ? 'Visible Checks' : 'Checks'}</span><strong>{data.rows.reduce((sum, row) => sum + row.watch.check_count, 0)}</strong></div>
+        <div className="metric"><span>{data.count > data.rows.length ? 'Visible Semantic Changes' : 'Semantic Changes'}</span><strong>{data.rows.every(row => row.semanticChanges !== undefined) ? data.rows.reduce((sum, row) => sum + (row.semanticChanges ?? 0), 0) : '—'}</strong></div>
+        <div className="metric"><span>{data.count > data.rows.length ? 'Visible Active Baselines' : 'Active Baselines'}</span><strong>{data.rows.filter(row => row.watch.active_baseline_id > 0).length}</strong></div>
       </div>
+      <p className="muted">Showing {data.rows.length} recent Watches of {data.count}. History metrics are loaded separately. <button className="secondary" disabled={loading || enriching || !!data.partial} onClick={() => void loadMetrics()}>{enriching ? 'Loading history metrics…' : 'Load semantic metrics'}</button></p>
       <section className="panel registry-panel">
         <div className="section-head"><div><span className="eyebrow">Registry</span><h2>Recent Watches</h2></div><span className="muted mono">{data.version}</span></div>
         {data.rows.length === 0 ? <div className="empty">No Watches on Studio yet. <Link to="/create">Establish the first baseline →</Link></div> :
-          <div className="watch-list">{data.rows.map(({ id, watch, latest }) => <Link className="watch-row" to={`/watch/${id}`} key={id}>
+          <div className="watch-list">{data.rows.map(({ id, watch, latest, latestPending, latestError }) => <Link className="watch-row" to={`/watch/${id}`} key={id}>
             <span className="row-id mono">#{String(id).padStart(3, '0')}</span>
             <span className="row-main"><strong>{watch.target_question}</strong><span className="muted mono">{sourceDomain(watch.source_url)}</span></span>
-            <span className="row-status"><span className={`badge ${latest ? verdictTone(latest.verdict) : 'neutral'}`}>{latest ? driftVerdict(latest.verdict) : 'NOT_CHECKED'}</span><small className="muted">{timeLabel(watch.last_check_at)}</small></span>
+            <span className="row-status"><span className={`badge ${latest ? verdictTone(latest.verdict) : 'neutral'}`}>{latest ? driftVerdict(latest.verdict) : latestPending ? 'LOADING' : latestError ? 'STATUS_UNAVAILABLE' : 'NOT_CHECKED'}</span><small className="muted">{timeLabel(watch.last_check_at)} · Baseline V{watch.baseline_version} / ID {watch.active_baseline_id}</small></span>
             <span aria-hidden="true" className="row-arrow">↗</span>
           </Link>)}</div>}
       </section>

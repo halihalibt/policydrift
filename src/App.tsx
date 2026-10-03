@@ -1,39 +1,38 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { HashRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
 import DebugPage from './pages/DebugPage'
 import Dashboard from './pages/Dashboard'
 import CreateWatch from './pages/CreateWatch'
 import WatchDetail from './pages/WatchDetail'
-import { explainError } from './lib/errors'
+import { observeWallet } from './lib/wallet'
+import { recordDiagnostic, explainError } from './lib/errors'
 import { connectWallet, CONTRACT_ADDRESS, CONTRACT_EXPLORER, STUDIO_API, STUDIO_CHAIN_ID, walletProvider } from './lib/studio'
+import { studionet } from 'genlayer-js/chains'
 import './App.css'
 
 export default function App() {
   const [wallet, setWallet] = useState('')
   const [walletError, setWalletError] = useState('')
   const [walletBusy, setWalletBusy] = useState(false)
+  const connecting = useRef(false)
 
   useEffect(() => {
     try {
       const provider = walletProvider()
-      const accountsChanged = (value: unknown) => {
-        const account = Array.isArray(value) && typeof value[0] === 'string' ? value[0] : ''
-        setWallet(account)
-        if (account) setWalletError('')
-      }
-      provider.request({ method: 'eth_accounts' }).then(value => {
-        accountsChanged(value)
-      }).catch(() => { /* Connection remains user initiated. */ })
-      provider.on?.('accountsChanged', accountsChanged)
-      return () => provider.removeListener?.('accountsChanged', accountsChanged)
+      return observeWallet(provider, studionet, state => {
+        setWallet(state.account)
+        setWalletError(state.error)
+      })
     } catch { /* Read access does not require a browser wallet. */ }
   }, [])
 
   async function connect() {
+    if (connecting.current) return
+    connecting.current = true
     setWalletBusy(true); setWalletError('')
-    try { setWallet(await connectWallet()) }
-    catch (error) { setWalletError(explainError(error, 'Wallet connection failed')) }
-    finally { setWalletBusy(false) }
+    try { setWallet(await connectWallet()); setWalletError('') }
+    catch (error) { recordDiagnostic('Wallet connection', error); setWallet(''); setWalletError(explainError(error, 'Wallet connection failed')) }
+    finally { connecting.current = false; setWalletBusy(false) }
   }
 
   return <HashRouter>
@@ -48,10 +47,10 @@ export default function App() {
       {walletError && <div role="alert" className="notice error">Wallet: {walletError}</div>}
       <main>
         <Routes>
-          <Route path="/debug" element={<DebugPage wallet={wallet} onConnect={connect} />} />
+          <Route path="/debug" element={<DebugPage wallet={walletBusy ? '' : wallet} onConnect={connect} />} />
           <Route path="/" element={<Dashboard />} />
-          <Route path="/create" element={<CreateWatch wallet={wallet} onConnect={connect} />} />
-          <Route path="/watch/:id" element={<WatchDetail wallet={wallet} onConnect={connect} />} />
+          <Route path="/create" element={<CreateWatch wallet={walletBusy ? '' : wallet} onConnect={connect} />} />
+          <Route path="/watch/:id" element={<WatchDetail wallet={walletBusy ? '' : wallet} onConnect={connect} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

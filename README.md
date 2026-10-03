@@ -61,7 +61,7 @@ The shared SDK integration is `src/lib/studio.ts`; semantic enum/bitmask convers
 
 ## Run locally
 
-Requires a recent Node.js and a compatible injected browser wallet:
+Requires Node.js 24. Public browsing needs no wallet; signed writes need a compatible injected EIP-1193 wallet:
 
 ```bash
 npm ci
@@ -78,6 +78,12 @@ npm run build
 
 The build uses relative asset paths for GitHub Pages and includes the frozen V2 `dist/demo/policy.html`. The Pages workflow builds and deploys on pushes to `main`. See [architecture](docs/ARCHITECTURE.md), [official Demo](docs/DEMO.md) and [historical V1 stage record](docs/PROJECT_STAGE_RESULT.md). The Project and Intelligent Contract have independent Git histories.
 
-## Known non-blocking status display issue
+## Frontend read reliability and wallet compatibility
 
-During some writes the frontend temporarily reported an RPC/status retrieval error or incomplete receipt before the finalized Registry and Explorer state was visible after refresh. The root cause is unproven; do not infer a Studio node fault or a contract failure. OKX `wallet_getSnaps` compatibility and receipt reconciliation are deferred UI work, separate from the accepted on-chain results.
+Public contract reads use a wallet-independent client. The eight finalized view methods share a two-request concurrency limit; Dashboard loads one Watch at a time. Transient transport failures are retried at most four times with exponential backoff (250/500/1000 ms plus small jitter). Contract reverts and invalid arguments are not retried. During refresh the Dashboard keeps its last successfully read records; persistent read failures surface an actionable retry message rather than a raw generic RPC error. These retained records are explicitly identified as the last successful read when a refresh fails, not presented as newly fetched data.
+
+Generic injected wallets use EIP-1193 account authorization and Studionet network switch/add using the pinned SDK's chain metadata. Snap-capable MetaMask retains the official SDK GenLayer Snap flow. An unsupported optional Snap capability is only bypassed after the generic account, chain and SDK-provider checks succeed. Account and chain events update the connection state; wrong-network wallets do not block public browsing.
+
+Write submissions and signature requests are **never automatically retried**. Only subsequent status/receipt reads can retry; an uncertain submission or exhausted status read preserves inspection instructions and the transaction hash when available. The SDK provider guard also blocks a second submission attempt from an ABI fallback. Debug retains raw diagnostics. This hardening does not guarantee perpetual RPC availability or change contract semantics, receipt classification, or the accepted Demo results.
+
+See [frontend reliability validation](docs/FRONTEND_RELIABILITY.md) for the confirmed code paths, automated coverage and remaining browser/release checks. Historical transient status errors do not establish a Studio-node fault or protocol failure.
